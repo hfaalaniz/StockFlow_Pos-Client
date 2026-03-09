@@ -16,6 +16,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Información de la app
   getVersion: ()      => ipcRenderer.invoke("app:getVersion"),
+  closeApp: ()        => ipcRenderer.invoke("app:quit"),
+
+  // Ventana
+  getFullscreen: ()   => ipcRenderer.invoke("window:getFullscreen"),
+  toggleFullscreen: () => ipcRenderer.invoke("window:toggleFullscreen"),
 
   // Plataforma (para atajos de teclado específicos)
   platform: process.platform,

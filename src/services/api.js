@@ -1,10 +1,16 @@
 import axios from "axios";
 
-// URL del servidor: se puede sobrescribir al momento del login (configuración LAN)
+// URL del servidor: preferir config guardada en navegador, luego fallback de build.
 // eslint-disable-next-line no-undef
-const defaultURL = typeof __DEFAULT_SERVER_URL__ !== "undefined"
+const buildDefaultURL = typeof __DEFAULT_SERVER_URL__ !== "undefined"
   ? __DEFAULT_SERVER_URL__
   : "http://localhost:4000";
+
+const browserSavedURL = typeof window !== "undefined"
+  ? localStorage.getItem("pos_server_url")
+  : null;
+
+const defaultURL = (browserSavedURL || buildDefaultURL).replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: `${defaultURL}/api`,

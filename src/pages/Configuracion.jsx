@@ -6,79 +6,87 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { setServerURL, setAuthToken } from "../services/api";
+import { setServerURL } from "../services/api";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import {
+  getRuntimeConfig,
+  getRuntimePlatform,
+  getRuntimeVersion,
+  getSystemPrinters,
+  isElectronRuntime,
+  setRuntimeConfig,
+} from "../services/runtime";
 
 // ─── Estilos compartidos ───────────────────────────────────────────────────────
 const S = {
   page: {
     display: "flex", flexDirection: "column", height: "100vh",
-    background: "#12121a", color: "#cdd6f4", overflow: "hidden",
+    background: "var(--bg)", color: "var(--text)", overflow: "hidden",
   },
   topbar: {
     display: "flex", alignItems: "center", gap: 12,
-    padding: "10px 20px", borderBottom: "1px solid #313244", flexShrink: 0,
+    padding: "10px 20px", borderBottom: "1px solid var(--border2)", flexShrink: 0,
   },
   backBtn: {
-    background: "none", border: "none", color: "#888",
+    background: "none", border: "none", color: "var(--muted2)",
     cursor: "pointer", fontSize: 20, lineHeight: 1,
   },
   body: {
     flex: 1, overflowY: "auto", padding: "24px 32px", maxWidth: 720,
   },
   section: {
-    background: "#1e1e2e", borderRadius: 12, padding: 20,
-    border: "1px solid #313244", marginBottom: 20,
+    background: "var(--surface)", borderRadius: 12, padding: 20,
+    border: "1px solid var(--border2)", marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 10, color: "#666", fontWeight: 700,
+    fontSize: 10, color: "var(--muted)", fontWeight: 700,
     letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16,
-    paddingBottom: 8, borderBottom: "1px solid #313244",
+    paddingBottom: 8, borderBottom: "1px solid var(--border2)",
   },
   row: {
     display: "flex", flexDirection: "column", gap: 6, marginBottom: 14,
   },
   label: {
-    fontSize: 11, color: "#888", fontWeight: 600, display: "block",
+    fontSize: 11, color: "var(--muted2)", fontWeight: 600, display: "block",
   },
   input: {
-    width: "100%", background: "#12121a", border: "1px solid #313244",
-    borderRadius: 8, padding: "9px 12px", color: "#cdd6f4",
+    width: "100%", background: "var(--bg)", border: "1px solid var(--border2)",
+    borderRadius: 8, padding: "9px 12px", color: "var(--text)",
     fontSize: 13, outline: "none",
   },
   select: {
-    width: "100%", background: "#12121a", border: "1px solid #313244",
-    borderRadius: 8, padding: "9px 12px", color: "#cdd6f4",
+    width: "100%", background: "var(--bg)", border: "1px solid var(--border2)",
+    borderRadius: 8, padding: "9px 12px", color: "var(--text)",
     fontSize: 13, outline: "none", cursor: "pointer",
   },
   btnPrimary: {
-    padding: "9px 20px", background: "#7c3aed", border: "none",
+    padding: "9px 20px", background: "var(--accent)", border: "none",
     borderRadius: 8, color: "#fff", fontWeight: 700,
     cursor: "pointer", fontSize: 13,
   },
   btnSecondary: {
-    padding: "9px 20px", background: "#313244", border: "none",
-    borderRadius: 8, color: "#cdd6f4", fontWeight: 600,
+    padding: "9px 20px", background: "var(--border2)", border: "none",
+    borderRadius: 8, color: "var(--text)", fontWeight: 600,
     cursor: "pointer", fontSize: 13,
   },
   btnDanger: {
     padding: "9px 20px", background: "rgba(229,62,62,0.15)",
     border: "1px solid rgba(229,62,62,0.4)",
-    borderRadius: 8, color: "#e53e3e", fontWeight: 600,
+    borderRadius: 8, color: "var(--danger)", fontWeight: 600,
     cursor: "pointer", fontSize: 13,
   },
-  hint: { fontSize: 11, color: "#555", marginTop: 3 },
+  hint: { fontSize: 11, color: "var(--muted)", marginTop: 3 },
   statusDot: (ok) => ({
     display: "inline-block", width: 8, height: 8,
-    borderRadius: "50%", background: ok ? "#48bb78" : "#e53e3e",
+    borderRadius: "50%", background: ok ? "var(--success)" : "var(--danger)",
     marginRight: 6,
   }),
   themeBtn: (active) => ({
     padding: "8px 16px", borderRadius: 8,
-    border: `1px solid ${active ? "#e8c547" : "#313244"}`,
-    background: active ? "rgba(232,197,71,0.12)" : "#12121a",
-    color: active ? "#e8c547" : "#888",
+    border: `1px solid ${active ? "var(--accent)" : "var(--border2)"}`,
+    background: active ? "rgba(var(--accent-rgb),0.12)" : "var(--bg)",
+    color: active ? "var(--accent)" : "var(--muted2)",
     fontWeight: active ? 700 : 400,
     cursor: "pointer", fontSize: 12,
   }),
@@ -107,11 +115,7 @@ function SeccionServidor({ serverURL, onSaved }) {
   const guardar = async () => {
     const base = url.replace(/\/+$/, "");
     setServerURL(base);
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig({ serverURL: base });
-    } else {
-      localStorage.setItem("pos_server_url", base);
-    }
+    await setRuntimeConfig({ serverURL: base });
     onSaved(base);
     toast.success("URL del servidor guardada");
   };
@@ -133,7 +137,7 @@ function SeccionServidor({ serverURL, onSaved }) {
           </button>
         </div>
         {status && (
-          <span style={{ fontSize: 12, color: status === "ok" ? "#48bb78" : "#e53e3e" }}>
+          <span style={{ fontSize: 12, color: status === "ok" ? "var(--success)" : "var(--danger)" }}>
             <span style={S.statusDot(status === "ok")} />
             {status === "ok" ? "Servidor accesible" : "Sin respuesta"}
           </span>
@@ -169,14 +173,9 @@ function SeccionSucursal({ sucursalActual, onSaved }) {
         // Cargar config guardada
         let savedCajaId = "";
         let savedCajaNombre = "";
-        if (window.electronAPI?.isElectron) {
-          const cfg = await window.electronAPI.getConfig();
-          savedCajaId = cfg.caja_id || "";
-          savedCajaNombre = cfg.caja_nombre || "";
-        } else {
-          savedCajaId = localStorage.getItem("pos_caja_id") || "";
-          savedCajaNombre = localStorage.getItem("pos_caja_nombre") || "";
-        }
+        const cfg = await getRuntimeConfig();
+        savedCajaId = cfg.caja_id || "";
+        savedCajaNombre = cfg.caja_nombre || "";
         setCajaId(String(savedCajaId));
         setCajaNombre(savedCajaNombre || "Caja Principal");
       } catch (err) {
@@ -197,13 +196,7 @@ function SeccionSucursal({ sucursalActual, onSaved }) {
       caja_id: cajaId ? Number(cajaId) : null,
       caja_nombre: cajaNombre,
     };
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig(data);
-    } else {
-      if (data.sucursal_id) localStorage.setItem("pos_sucursal", String(data.sucursal_id));
-      if (data.caja_id) localStorage.setItem("pos_caja_id", String(data.caja_id));
-      if (data.caja_nombre) localStorage.setItem("pos_caja_nombre", data.caja_nombre);
-    }
+    await setRuntimeConfig(data);
     onSaved(data);
     toast.success("Sucursal y caja guardadas");
   };
@@ -211,7 +204,7 @@ function SeccionSucursal({ sucursalActual, onSaved }) {
   if (loading) return (
     <div style={S.section}>
       <div style={S.sectionTitle}>Sucursal y Caja</div>
-      <div style={{ color: "#888", fontSize: 13 }}>Cargando…</div>
+      <div style={{ color: "var(--muted2)", fontSize: 13 }}>Cargando…</div>
     </div>
   );
 
@@ -252,7 +245,7 @@ function SeccionSucursal({ sucursalActual, onSaved }) {
           ))}
         </select>
         {cajasFiltradas.length === 0 && sucId && (
-          <span style={{ fontSize: 11, color: "#e8a923" }}>
+          <span style={{ fontSize: 11, color: "var(--warning)" }}>
             No hay cajas configuradas para esta sucursal
           </span>
         )}
@@ -285,11 +278,7 @@ function SeccionOperador() {
     if (!/^\d+$/.test(pin)) return toast.error("El PIN solo puede contener números");
 
     const data = { supervisor_pin: pin };
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig(data);
-    } else {
-      localStorage.setItem("pos_supervisor_pin", pin);
-    }
+    await setRuntimeConfig(data);
     setPin(""); setPinConfirm("");
     toast.success("PIN de supervisor guardado");
   };
@@ -313,7 +302,7 @@ function SeccionOperador() {
             type="button"
             onClick={() => setShowPin(v => !v)}
             style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 12 }}
+              background: "none", border: "none", color: "var(--muted2)", cursor: "pointer", fontSize: 12 }}
           >
             {showPin ? "Ocultar" : "Ver"}
           </button>
@@ -341,7 +330,7 @@ function SeccionOperador() {
 function SeccionApariencia() {
   const { theme, setTheme } = useTheme();
   const themes = [
-    { key: "gold",  label: "Gold",  color: "#e8c547" },
+    { key: "gold",  label: "Gold",  color: "var(--accent)" },
     { key: "dark",  label: "Oscuro", color: "#6366f1" },
     { key: "light", label: "Claro", color: "#2563eb" },
   ];
@@ -359,9 +348,9 @@ function SeccionApariencia() {
               onClick={() => { setTheme(t.key); toast.success(`Tema "${t.label}" aplicado`); }}
               style={{
                 ...S.themeBtn(theme === t.key),
-                borderColor: theme === t.key ? t.color : "#313244",
-                color: theme === t.key ? t.color : "#888",
-                background: theme === t.key ? `${t.color}18` : "#12121a",
+                borderColor: theme === t.key ? t.color : "var(--border2)",
+                color: theme === t.key ? t.color : "var(--muted2)",
+                background: theme === t.key ? `${t.color}18` : "var(--bg)",
                 display: "flex", alignItems: "center", gap: 8,
               }}
             >
@@ -378,36 +367,37 @@ function SeccionApariencia() {
 
 // ─── Sección: Impresora ───────────────────────────────────────────────────────
 function SeccionImpresora() {
+  const isDesktop = isElectronRuntime();
   const [printers, setPrinters] = useState([]);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const cargar = async () => {
-      if (!window.electronAPI?.isElectron) return;
+      if (!isDesktop) return;
       setLoading(true);
       try {
-        const list = await window.electronAPI.getPrinters();
+        const list = await getSystemPrinters();
         setPrinters(list);
-        const cfg = await window.electronAPI.getConfig();
+        const cfg = await getRuntimeConfig();
         setSelected(cfg.printer_name || "");
       } catch { /* no hay impresoras */ }
       finally { setLoading(false); }
     };
     cargar();
-  }, []);
+  }, [isDesktop]);
 
   const guardar = async () => {
-    if (!window.electronAPI?.isElectron) return toast.error("Solo disponible en modo escritorio");
-    await window.electronAPI.setConfig({ printer_name: selected });
+    if (!isDesktop) return toast.error("Solo disponible en modo escritorio");
+    await setRuntimeConfig({ printer_name: selected });
     toast.success("Impresora guardada");
   };
 
-  if (!window.electronAPI?.isElectron) {
+  if (!isDesktop) {
     return (
       <div style={S.section}>
         <div style={S.sectionTitle}>Impresora</div>
-        <p style={{ fontSize: 12, color: "#555" }}>La gestión de impresoras solo está disponible en la aplicación de escritorio.</p>
+        <p style={{ fontSize: 12, color: "var(--muted)" }}>La gestión de impresoras solo está disponible en la aplicación de escritorio.</p>
       </div>
     );
   }
@@ -419,7 +409,7 @@ function SeccionImpresora() {
       <div style={S.row}>
         <label style={S.label}>Impresora de tickets</label>
         {loading ? (
-          <p style={{ fontSize: 12, color: "#888" }}>Cargando impresoras…</p>
+          <p style={{ fontSize: 12, color: "var(--muted2)" }}>Cargando impresoras…</p>
         ) : (
           <select style={S.select} value={selected} onChange={e => setSelected(e.target.value)}>
             <option value="">Impresora predeterminada del sistema</option>
@@ -447,12 +437,7 @@ function SeccionTicket() {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const src = window.electronAPI?.isElectron
-          ? await window.electronAPI.getConfig()
-          : { nombre_negocio: localStorage.getItem("pos_nombre_negocio") || "",
-              cuit: localStorage.getItem("pos_cuit") || "",
-              direccion: localStorage.getItem("pos_direccion") || "",
-              ticket_footer: localStorage.getItem("pos_ticket_footer") || "" };
+        const src = await getRuntimeConfig();
         setNombreNegocio(src.nombre_negocio || "");
         setCuit(src.cuit || "");
         setDireccion(src.direccion || "");
@@ -465,12 +450,7 @@ function SeccionTicket() {
 
   const guardar = async () => {
     const data = { nombre_negocio: nombreNegocio, cuit, direccion, ticket_footer: footer };
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig(data);
-    } else {
-      Object.entries({ pos_nombre_negocio: nombreNegocio, pos_cuit: cuit, pos_direccion: direccion, pos_ticket_footer: footer })
-        .forEach(([k, v]) => v ? localStorage.setItem(k, v) : localStorage.removeItem(k));
-    }
+    await setRuntimeConfig(data);
     toast.success("Configuración del ticket guardada");
   };
 
@@ -510,9 +490,7 @@ function SeccionSistema({ serverURL }) {
   const [version, setVersion] = useState("—");
 
   useEffect(() => {
-    if (window.electronAPI?.isElectron) {
-      window.electronAPI.getVersion?.().then(v => setVersion(v)).catch(() => {});
-    }
+    getRuntimeVersion().then(v => setVersion(v)).catch(() => setVersion("web"));
   }, []);
 
   const limpiarCache = () => {
@@ -530,8 +508,8 @@ function SeccionSistema({ serverURL }) {
   const ConfigRow = ({ label, value }) => (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0",
       borderBottom: "1px solid #252535", fontSize: 12 }}>
-      <span style={{ color: "#888" }}>{label}</span>
-      <span style={{ fontFamily: "monospace", color: "#cdd6f4" }}>{value}</span>
+      <span style={{ color: "var(--muted2)" }}>{label}</span>
+      <span style={{ fontFamily: "monospace", color: "var(--text)" }}>{value}</span>
     </div>
   );
 
@@ -541,8 +519,8 @@ function SeccionSistema({ serverURL }) {
 
       <ConfigRow label="Versión"        value={version} />
       <ConfigRow label="Servidor"       value={serverURL || "localhost:4000"} />
-      <ConfigRow label="Plataforma"     value={window.electronAPI?.platform || "browser"} />
-      <ConfigRow label="Modo"           value={window.electronAPI?.isElectron ? "Escritorio (Electron)" : "Navegador"} />
+      <ConfigRow label="Plataforma"     value={getRuntimePlatform()} />
+      <ConfigRow label="Modo"           value={isElectronRuntime() ? "Escritorio (Electron)" : "Navegador"} />
 
       <div style={{ marginTop: 16, display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button onClick={limpiarCache} style={S.btnDanger}>
@@ -575,7 +553,7 @@ export default function Configuracion() {
       <div style={S.topbar}>
         <button onClick={() => navigate(-1)} style={S.backBtn} title="Volver">←</button>
         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Configuración</h2>
-        <span style={{ fontSize: 11, color: "#555", marginLeft: "auto" }}>
+        <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: "auto" }}>
           StockFlow POS
         </span>
       </div>

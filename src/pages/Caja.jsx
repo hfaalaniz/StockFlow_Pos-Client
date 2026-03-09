@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { getRuntimeConfig } from "../services/runtime";
 
 const fmt = (v) => "$" + Number(v || 0).toLocaleString("es-AR", { minimumFractionDigits: 2 });
 const fmtFecha = (d) => d ? new Date(d).toLocaleString("es-AR") : "—";
@@ -32,13 +33,8 @@ export default function Caja() {
   useEffect(() => {
     const cargarConfig = async () => {
       try {
-        if (window.electronAPI?.isElectron) {
-          const cfg = await window.electronAPI.getConfig();
-          if (cfg.caja_id) setCajaId(Number(cfg.caja_id));
-        } else {
-          const saved = localStorage.getItem("pos_caja_id");
-          if (saved) setCajaId(Number(saved));
-        }
+        const cfg = await getRuntimeConfig();
+        if (cfg.caja_id) setCajaId(Number(cfg.caja_id));
       } catch { /* ignorar */ }
     };
     cargarConfig();

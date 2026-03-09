@@ -20,6 +20,27 @@
   --shadow: 0 4px 24px rgba(0,0,0,0.35);
 }
 
+[data-theme="gold"] {
+  --bg: #0d0f14;
+  --surface: #14171f;
+  --surface2: #1c2030;
+  --surface3: #222840;
+  --border: #252a38;
+  --border2: #2e354a;
+  --accent: #e8c547;
+  --accent2: #f0d875;
+  --accent-rgb: 232,197,71;
+  --text: #e8eaf0;
+  --muted: #6b7494;
+  --muted2: #8b96b8;
+  --success: #3ecf8e;
+  --danger: #f06565;
+  --warning: #f0a835;
+  --info: #5b8af0;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+
 /* ── TEMA DARK ── */
 [data-theme="dark"] {
   --bg: #09090b;
@@ -43,23 +64,23 @@
 
 /* ── TEMA LIGHT ── */
 [data-theme="light"] {
-  --bg: #f0f4f8;
+  --bg: #f3f6fa;
   --surface: #ffffff;
-  --surface2: #e8eef5;
-  --surface3: #d6e0ec;
-  --border: #cdd7e3;
-  --border2: #b8c8da;
-  --accent: #2563eb;
-  --accent2: #3b82f6;
-  --accent-rgb: 37,99,235;
-  --text: #0f1929;
-  --muted: #6b7a8d;
-  --muted2: #8898aa;
-  --success: #059669;
-  --danger: #dc2626;
-  --warning: #d97706;
-  --info: #2563eb;
-  --shadow: 0 4px 24px rgba(0,0,0,0.10);
+  --surface2: #e9f0f8;
+  --surface3: #d4e1f2;
+  --border: #b7c9dd;
+  --border2: #8fabc8;
+  --accent: #0d6efd;
+  --accent2: #2f8bff;
+  --accent-rgb: 13,110,253;
+  --text: #0b1a2b;
+  --muted: #435b74;
+  --muted2: #2f465e;
+  --success: #0b9f6a;
+  --danger: #cf2135;
+  --warning: #cc7a00;
+  --info: #0d6efd;
+  --shadow: 0 8px 28px rgba(16, 42, 67, 0.14);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,3 +96,23 @@ html, body, #root {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+/* Light mode: botones con luminosidad al hover y campos bien definidos */
+[data-theme="light"] button,
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  transition: filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+[data-theme="light"] button:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.28), 0 8px 16px rgba(var(--accent-rgb), 0.16);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+}

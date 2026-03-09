@@ -27,17 +27,38 @@ npm run dev
 
 # Solo el frontend web (sin Electron)
 npm run dev:web
+
+# Build web para deploy en navegador
+npm run build:web
 ```
 
 ## Build y empaquetado
 
 ```bash
 # Build de producción + instalador NSIS
-npm run electron:build
+npm run release:desktop
 # Salida: release/StockFlow POS Setup 1.0.0.exe
 
+# Si NSIS falla por archivos temporales en Windows (C:\Windows\TEMP)
+npm run release:desktop:win
+
 # Build pre-configurado para una sucursal específica
-DEFAULT_SERVER_URL=http://192.168.1.100:4000 npm run electron:build
+DEFAULT_SERVER_URL=http://192.168.1.100:4000 npm run release:desktop
+
+# Solo artefacto Electron (sin instalador)
+npm run build:electron
+
+# Solo artefacto Web
+npm run release:web
+```
+
+Desde cualquier carpeta (por ejemplo `C:\stockflow`), podés usar:
+
+```bash
+npm --prefix "c:\stockflow\pos-client" run build:electron
+npm --prefix "c:\stockflow\pos-client" run release:desktop
+npm --prefix "c:\stockflow\pos-client" run release:desktop:win
+npm --prefix "c:\stockflow\pos-client" run build:web
 ```
 
 ## Configuración por sucursal
@@ -47,6 +68,19 @@ Al iniciar la app por primera vez, el operador ingresa:
 2. **Email y contraseña** del usuario
 
 La URL se puede pre-configurar en el build o en `AppData\Roaming\stockflow-pos-client\pos-config.json`.
+
+En modo web (browser), la configuración se persiste en `localStorage`:
+- `pos_server_url`
+- `pos_token`
+- `pos_sucursal`
+- `pos_caja_id`
+- `pos_caja_nombre`
+
+## Modos de build
+
+- `npm run build` -> alias de `build:electron`
+- `npm run build:electron` -> build Electron (`vite --mode electron`, `base: "./"`)
+- `npm run build:web` -> build Web (`vite --mode web`, `base: "/"`)
 
 ## Funcionalidades
 

@@ -17,8 +17,8 @@ IF ERRORLEVEL 1 (
     exit /b 1
 )
 
-echo [StockFlow POS] Compilando React con Vite...
-node_modules\.bin\vite.cmd build
+echo [StockFlow POS] Compilando React con Vite (modo Electron)...
+node_modules\.bin\vite.cmd build --mode electron
 IF ERRORLEVEL 1 (
     echo ERROR: Fallo el build de Vite.
     pause

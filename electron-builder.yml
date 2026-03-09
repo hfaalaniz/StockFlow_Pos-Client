@@ -4,15 +4,15 @@ copyright: Copyright 2026 StockFlow
 directories:
   output: release
   buildResources: assets
+  app: .
 files:
-  - dist/**/*
+  - dist-electron/**/*
   - electron/**/*
-  - app/**/*
   - main.js
   - package.json
 asar: true
 asarUnpack:
-  - dist/**/*
+  - dist-electron/**/*
   - electron/**/*
 npmRebuild: false
 win:

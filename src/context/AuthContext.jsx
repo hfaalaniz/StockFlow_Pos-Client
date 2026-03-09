@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import api, { setServerURL, setAuthToken } from "../services/api";
+import { getRuntimeConfig, isElectronRuntime, setRuntimeConfig } from "../services/runtime";
 
 const AuthContext = createContext(null);
 
@@ -41,10 +42,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const isElectron = typeof window !== "undefined" && window.electronAPI?.isElectron;
+        const isElectron = isElectronRuntime();
+        const config = await getRuntimeConfig();
 
         if (isElectron) {
-          const config = await window.electronAPI.getConfig();
           if (config.serverURL) {
             setServerURL(config.serverURL);
             setServerURLState(config.serverURL);
@@ -59,9 +60,12 @@ export function AuthProvider({ children }) {
           }
         } else {
           // Fallback browser (modo dev sin Electron)
-          const savedToken = localStorage.getItem("pos_token");
-          const savedSucursal = localStorage.getItem("pos_sucursal");
-          if (savedSucursal) setSucursal(Number(savedSucursal));
+          if (config.serverURL) {
+            setServerURL(config.serverURL);
+            setServerURLState(config.serverURL);
+          }
+          if (config.sucursal_id) setSucursal(Number(config.sucursal_id));
+          const savedToken = config.token;
           if (savedToken) {
             setAuthToken(savedToken);
             setToken(savedToken);
@@ -93,11 +97,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setAuthToken(null);
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig({ token: null }).catch(() => {});
-    } else {
-      localStorage.removeItem("pos_token");
-    }
+    await setRuntimeConfig({ token: null }).catch(() => {});
   };
 
   /** login recibe también la URL del servidor (ingresada en el campo de Login) */
@@ -118,16 +118,11 @@ export function AuthProvider({ children }) {
     setSucursal(sucId);
 
     // Persistir en Electron o localStorage (fallback)
-    if (window.electronAPI?.isElectron) {
-      await window.electronAPI.setConfig({
-        token: newToken,
-        serverURL: url || serverURL,
-        sucursal_id: sucId,
-      });
-    } else {
-      localStorage.setItem("pos_token", newToken);
-      localStorage.setItem("pos_sucursal", String(sucId));
-    }
+    await setRuntimeConfig({
+      token: newToken,
+      serverURL: url || serverURL,
+      sucursal_id: sucId,
+    });
 
     return data;
   };

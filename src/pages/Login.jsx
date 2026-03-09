@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import toast from "react-hot-toast";
+import { getRuntimeVersion } from "../services/runtime";
 
 export default function Login() {
   const { login, serverURL } = useAuth();
@@ -14,6 +15,11 @@ export default function Login() {
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
   const [testando, setTestando] = useState(false);
+  const [version, setVersion] = useState("web");
+
+  useEffect(() => {
+    getRuntimeVersion().then(setVersion).catch(() => setVersion("web"));
+  }, []);
 
   const testConexion = async () => {
     setTestando(true);
@@ -45,6 +51,24 @@ export default function Login() {
     }
   };
 
+  const handleCloseApp = async () => {
+    try {
+      if (window?.electronAPI?.closeApp) {
+        await window.electronAPI.closeApp();
+        return;
+      }
+
+      // En web algunos navegadores bloquean cerrar pestañas no abiertas por script.
+      window.open("", "_self");
+      window.close();
+      setTimeout(() => {
+        toast.error("El navegador bloqueó el cierre automático de la pestaña.");
+      }, 250);
+    } catch {
+      toast.error("No se pudo cerrar la aplicación.");
+    }
+  };
+
   return (
     <div style={{
       display: "flex",
@@ -52,23 +76,23 @@ export default function Login() {
       alignItems: "center",
       justifyContent: "center",
       height: "100vh",
-      background: "#12121a",
+      background: "var(--bg)",
       padding: 24,
     }}>
       {/* Logo / marca */}
       <div style={{ marginBottom: 32, textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🛒</div>
-        <h1 style={{ color: "#e8c547", fontSize: 28, fontWeight: 800, letterSpacing: 2 }}>
+        <h1 style={{ color: "var(--accent)", fontSize: 28, fontWeight: 800, letterSpacing: 2 }}>
           STOCKFLOW POS
         </h1>
-        <p style={{ color: "#666", fontSize: 13, marginTop: 4 }}>Terminal de Punto de Venta</p>
+        <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>Terminal de Punto de Venta</p>
       </div>
 
       <form
         onSubmit={handleSubmit}
         style={{
-          background: "#1e1e2e",
-          border: "1px solid #313244",
+          background: "var(--surface)",
+          border: "1px solid var(--border2)",
           borderRadius: 12,
           padding: 32,
           width: "100%",
@@ -80,7 +104,7 @@ export default function Login() {
       >
         {/* URL del servidor */}
         <div>
-          <label style={{ fontSize: 12, color: "#aaa", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 12, color: "var(--muted2)", display: "block", marginBottom: 6 }}>
             URL del servidor (IP de la red local)
           </label>
           <div style={{ display: "flex", gap: 8 }}>
@@ -97,10 +121,10 @@ export default function Login() {
               disabled={testando}
               style={{
                 padding: "0 14px",
-                background: "#313244",
-                border: "1px solid #45475a",
+                background: "var(--border2)",
+                border: "1px solid var(--surface3)",
                 borderRadius: 8,
-                color: "#cdd6f4",
+                color: "var(--text)",
                 cursor: "pointer",
                 fontSize: 12,
                 whiteSpace: "nowrap",
@@ -113,7 +137,7 @@ export default function Login() {
 
         {/* Email */}
         <div>
-          <label style={{ fontSize: 12, color: "#aaa", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 12, color: "var(--muted2)", display: "block", marginBottom: 6 }}>
             Email
           </label>
           <input
@@ -129,7 +153,7 @@ export default function Login() {
 
         {/* Contraseña */}
         <div>
-          <label style={{ fontSize: 12, color: "#aaa", display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 12, color: "var(--muted2)", display: "block", marginBottom: 6 }}>
             Contraseña
           </label>
           <input
@@ -144,11 +168,11 @@ export default function Login() {
 
         {error && (
           <div style={{
-            background: "#4a1a1a",
-            border: "1px solid #e53e3e",
+            background: "rgba(220,38,38,0.12)",
+            border: "1px solid var(--danger)",
             borderRadius: 8,
             padding: "10px 14px",
-            color: "#fc8181",
+            color: "var(--danger)",
             fontSize: 13,
           }}>
             {error}
@@ -159,7 +183,7 @@ export default function Login() {
           type="submit"
           disabled={loading}
           style={{
-            background: loading ? "#3d3d5c" : "#7c3aed",
+            background: loading ? "var(--surface3)" : "var(--accent)",
             color: "#fff",
             border: "none",
             borderRadius: 8,
@@ -173,11 +197,27 @@ export default function Login() {
         >
           {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
         </button>
+
+        <button
+          type="button"
+          onClick={handleCloseApp}
+          style={{
+            background: "transparent",
+            color: "var(--muted2)",
+            border: "1px solid var(--surface3)",
+            borderRadius: 8,
+            padding: "10px 0",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Cerrar aplicación
+        </button>
       </form>
 
-      <p style={{ color: "#555", fontSize: 11, marginTop: 20 }}>
-        StockFlow POS v{typeof window !== "undefined" && window.electronAPI?.getVersion
-          ? "..." : "1.0"}
+      <p style={{ color: "var(--muted)", fontSize: 11, marginTop: 20 }}>
+        StockFlow POS <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12 }}>v{version}</span>
       </p>
     </div>
   );
@@ -185,11 +225,11 @@ export default function Login() {
 
 const inputStyle = {
   width: "100%",
-  background: "#313244",
-  border: "1px solid #45475a",
+  background: "var(--border2)",
+  border: "1px solid var(--surface3)",
   borderRadius: 8,
   padding: "10px 14px",
-  color: "#cdd6f4",
+  color: "var(--text)",
   fontSize: 14,
   outline: "none",
 };

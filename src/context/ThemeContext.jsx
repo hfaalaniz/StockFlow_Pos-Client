@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { getRuntimeConfig, isElectronRuntime, setRuntimeConfig } from "../services/runtime";
 
 export const THEMES = {
   gold: {
@@ -27,16 +28,21 @@ export const THEMES = {
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(
-    () => localStorage.getItem("sf_theme") || "gold"
-  );
+  const [theme, setThemeState] = useState(() => {
+    try {
+      const stored = localStorage.getItem("sf_theme") || "gold";
+      return THEMES[stored] ? stored : "gold";
+    } catch {
+      return "gold";
+    }
+  });
 
   // Al montar: cargar tema desde Electron config si está disponible
   useEffect(() => {
     const cargar = async () => {
-      if (window.electronAPI?.isElectron) {
+      if (isElectronRuntime()) {
         try {
-          const cfg = await window.electronAPI.getConfig();
+          const cfg = await getRuntimeConfig();
           if (cfg.theme) {
             setThemeState(cfg.theme);
           }
@@ -47,21 +53,20 @@ export function ThemeProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    const safeTheme = THEMES[theme] ? theme : "gold";
     const html = document.documentElement;
-    if (theme === "gold") {
-      html.removeAttribute("data-theme");
-    } else {
-      html.setAttribute("data-theme", theme);
-    }
+    html.setAttribute("data-theme", safeTheme);
+    if (document.body) document.body.setAttribute("data-theme", safeTheme);
+
     // Persistir en localStorage siempre
-    localStorage.setItem("sf_theme", theme);
+    try { localStorage.setItem("sf_theme", safeTheme); } catch { /* ignore */ }
     // Fix: también persistir en Electron config para sobrevivir reinicios
-    if (window.electronAPI?.isElectron) {
-      window.electronAPI.setConfig({ theme }).catch(() => {});
+    if (isElectronRuntime()) {
+      setRuntimeConfig({ theme: safeTheme }).catch(() => {});
     }
   }, [theme]);
 
-  const setTheme = (t) => setThemeState(t);
+  const setTheme = (t) => setThemeState(THEMES[t] ? t : "gold");
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, themes: THEMES }}>

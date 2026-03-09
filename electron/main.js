@@ -1,6 +1,42 @@
-const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session, Menu } = require("electron");
 const path = require("path");
 const fs   = require("fs");
+
+function firstExistingPath(candidates) {
+  for (const p of candidates) {
+    if (p && fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+function getPreloadPath() {
+  const appPath = app.getAppPath();
+  const resourcesPath = process.resourcesPath;
+
+  return firstExistingPath([
+    path.join(__dirname, "preload.js"),
+    path.join(appPath, "electron", "preload.js"),
+    path.join(resourcesPath, "app.asar", "electron", "preload.js"),
+    path.join(resourcesPath, "app.asar.unpacked", "electron", "preload.js"),
+    path.join(resourcesPath, "electron", "preload.js"),
+  ]);
+}
+
+function getRendererIndexPath() {
+  const appPath = app.getAppPath();
+  const resourcesPath = process.resourcesPath;
+
+  return firstExistingPath([
+    path.join(appPath, "dist-electron", "index.html"),
+    path.join(appPath, "dist", "index.html"),
+    path.join(resourcesPath, "app.asar", "dist-electron", "index.html"),
+    path.join(resourcesPath, "app.asar", "dist", "index.html"),
+    path.join(resourcesPath, "dist-electron", "index.html"),
+    path.join(resourcesPath, "dist", "index.html"),
+    path.join(__dirname, "..", "dist-electron", "index.html"),
+    path.join(__dirname, "..", "dist", "index.html"),
+  ]);
+}
 
 // ─── Config persistence ───────────────────────────────────────────────────────
 function getConfigPath() {
@@ -24,14 +60,22 @@ function saveConfig(data) {
 let mainWindow;
 
 function createWindow() {
+  const preloadPath = getPreloadPath();
+
+  if (!preloadPath) {
+    console.error("[POS] No se encontró preload.js");
+  }
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
     minHeight: 680,
+    fullscreen: true,
+    autoHideMenuBar: true,
     backgroundColor: "#12121a",
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: preloadPath || undefined,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -46,10 +90,17 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:5174");
     mainWindow.webContents.openDevTools({ mode: "detach" });
   } else {
-    const distPath = path.join(__dirname, "../dist/index.html");
+    const distPath = getRendererIndexPath();
+    if (!distPath) {
+      console.error("[POS] No se encontró index.html para renderer");
+      return;
+    }
     console.log("[POS] Cargando:", distPath, "| existe:", fs.existsSync(distPath));
     mainWindow.loadURL(`file://${distPath.replace(/\\/g, "/")}`);
   }
+
+  // UI limpia tipo kiosk: sin menu nativo visible.
+  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
 
@@ -68,18 +119,20 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+
   // Content-Security-Policy para evitar advertencias de Electron
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' file: http://localhost:* ws://localhost:*; " +
+          "default-src 'self' file: data: blob: http: https: ws: wss:; " +
           "script-src 'self'; " +
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-          "font-src 'self' https://fonts.gstatic.com; " +
-          "img-src 'self' data: blob: http://localhost:* https:; " +
-          "connect-src 'self' http://localhost:* ws://localhost:*;"
+          "font-src 'self' https://fonts.gstatic.com data:; " +
+          "img-src 'self' data: blob: http: https:; " +
+          "connect-src 'self' http: https: ws: wss:;"
         ],
       },
     });
@@ -104,6 +157,22 @@ ipcMain.handle("config:set", (_, data) => {
 });
 
 ipcMain.handle("app:getVersion", () => app.getVersion());
+
+ipcMain.handle("app:quit", () => {
+  app.quit();
+  return true;
+});
+
+ipcMain.handle("window:getFullscreen", () => {
+  return !!mainWindow?.isFullScreen();
+});
+
+ipcMain.handle("window:toggleFullscreen", () => {
+  if (!mainWindow) return false;
+  const next = !mainWindow.isFullScreen();
+  mainWindow.setFullScreen(next);
+  return next;
+});
 
 // Fix: usar printer_name guardado en config para la impresión
 ipcMain.handle("print:ticket", async (_, htmlContent, printerName) => {

@@ -1,8 +1,9 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SyncProvider } from "./context/SyncContext";
 import { SocketProvider } from "./context/SocketContext";
+import { isElectronRuntime } from "./services/runtime";
 import Login from "./pages/Login";
 import POS from "./pages/POS";
 import Caja from "./pages/Caja";
@@ -83,11 +84,13 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const Router = isElectronRuntime() ? HashRouter : BrowserRouter;
+
   return (
-    <HashRouter>
+    <Router>
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    </HashRouter>
+    </Router>
   );
 }
