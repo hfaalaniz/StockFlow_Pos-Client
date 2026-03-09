@@ -2082,7 +2082,6 @@ export default function POS() {
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100vh", background:"var(--bg)", color:"var(--text)", overflow:"hidden" }}>
       <OfflineBanner />
-      <SyncIndicator />
 
       {/* ── Topbar ─────────────────────────────────────────────────── */}
       <div style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 14px", borderBottom:"1px solid var(--border2)", flexShrink:0 }}>
@@ -2101,6 +2100,7 @@ export default function POS() {
             <span>Tot:<strong style={{ color:"var(--success)", fontFamily:"monospace", marginLeft:3 }}>{fmt(resumenTurno.total_ventas || 0)}</strong></span>
           </div>
         )}
+        <SyncIndicator variant="topbar" />
         <div style={{ marginLeft:"auto", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:2 }}>
           <span style={{ fontSize:10, color: fullscreen ? "var(--accent)" : "var(--muted2)", fontWeight:700 }}>
             {fullscreen ? "Pantalla completa" : "Modo normal"}
