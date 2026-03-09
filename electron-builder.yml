@@ -1,0 +1,29 @@
+appId: com.stockflow.pos
+productName: StockFlow POS
+copyright: Copyright 2026 StockFlow
+directories:
+  output: release
+  buildResources: assets
+files:
+  - dist/**/*
+  - electron/**/*
+  - app/**/*
+  - main.js
+  - package.json
+asar: true
+asarUnpack:
+  - dist/**/*
+  - electron/**/*
+npmRebuild: false
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: StockFlow POS
+publish: null

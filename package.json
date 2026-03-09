@@ -1,0 +1,32 @@
+{
+  "name": "stockflow-pos-client",
+  "version": "1.0.0",
+  "description": "StockFlow POS Terminal — Aplicación de escritorio Electron para ventas en sucursal",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5174 && cross-env NODE_ENV=development electron .\"",
+    "dev:web": "vite",
+    "build": "vite build",
+    "electron:build": "npm run build && electron-builder",
+    "preview": "vite preview",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dexie": "^3.2.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.0",
+    "react-hot-toast": "^2.4.1",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "33.4.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.1.0",
+    "wait-on": "^7.2.0"
+  }
+}
